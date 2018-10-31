@@ -1,0 +1,157 @@
+pre = "Green";
+post = "Red";
+POI = "Blue";
+
+precount = 0;
+postcount = 0;
+POIcount = 0;
+area = 0;
+finalCount = 0;
+
+resultdir = getDirectory("for ROI");
+folderlist=getFileList(resultdir);
+print("title	#overlapped	Area	precount	postcount	POIcount");
+print("pre:	"+pre+"	post:	"+post+"	POI:	"+POI);
+for(x=0;x<folderlist.length;x++){
+	Array.show(folderlist);
+	filelist=getFileList(resultdir+folderlist[x]);
+	foldername = File.getName(resultdir+folderlist[x]);
+	roiManager("reset");
+	run("Clear Results");
+	print(0);
+	for(p=0;p<filelist.length;p++){
+		print(filelist[p]);
+		precount = 0;
+		postcount = 0;
+		POIcount = 0;
+		area = 0;
+		finalCount = 0;
+		if(File.exists(File.getName(resultdir+folderlist[x]+filelist[p]+"_"+pre+"_ROI.zip"))==0){
+			index = indexOf(File.getName(resultdir+folderlist[x]+filelist[p]),"_"+pre+"_ROI.zip");
+			title =  substring(File.getName(resultdir+folderlist[x]+filelist[p]), 0,index);
+			exists = 1;
+		}
+		else if(File.exists(File.getName(resultdir+folderlist[x]+filelist[p]+"_"+post+"_ROI.zip"))==0){
+			index = indexOf(File.getName(resultdir+folderlist[x]+filelist[p]),"_"+post+"_ROI.zip");
+			title =  substring(File.getName(resultdir+folderlist[x]+filelist[p]), 0,index);
+			exists = 0;
+		}
+		if(endsWith(File.getName(resultdir+folderlist[x]+filelist[p]), "_ROI.zip")==1){
+			roiManager("reset");
+			run("Clear Results");
+
+			roiManager("Open", resultdir+folderlist[x]+title+"_"+pre+"_ROI.zip");
+			roiManager("show all without labels");
+			open(resultdir+folderlist[x]+title+"_"+pre+"_mask.tif");
+			ROI = newArray();
+			precount = roiManager("Count");
+			for(n=0;n<roiManager("Count");n++){
+				ROI = Array.concat(ROI,n);
+			}
+			if(roiManager("Count")>1){
+				roiManager("Select", ROI);
+				roiManager("Combine");
+				roiManager("Add");
+				for(n=1;n<roiManager("Count");n++){
+					roiManager("Select", n);
+					roiManager("Delete");
+				}
+				roiManager("Open", resultdir+folderlist[x]+title+"_"+post+"_ROI.zip");
+				roiManager("show all without labels");
+				postcount = (roiManager("Count")-1);
+				ROI = newArray();
+				if(roiManager("Count")>2){
+					for(n=1;n<roiManager("Count");n++){
+						ROI = Array.concat(ROI,n);
+					}
+					roiManager("Select", ROI);
+					roiManager("Combine");
+					roiManager("Add");
+					for(n=2;n<roiManager("Count");n++){
+						roiManager("Select", n);
+						roiManager("Delete");
+					}
+					roiManager("Select", newArray(0,1));
+					roiManager("AND");
+					if(selectionType() == 9 ){
+						roiManager("Add");
+						roiManager("Select", newArray(0,1));
+						roiManager("Delete");
+						roiManager("Open", resultdir+folderlist[x]+title+"_"+POI+"_ROI.zip");
+						roiManager("show all without labels");
+						POIcount = (roiManager("Count")-1);
+						ROI = newArray();
+						for(n=1;n<(roiManager("Count"));n++){
+							ROI = Array.concat(ROI,n);
+						}
+						roiManager("Select", ROI);
+						roiManager("Combine");
+						roiManager("Add");
+						for(n=1;n<(roiManager("Count")-1);n++){
+							roiManager("Select", n);
+							roiManager("Delete");
+						}
+						roiManager("Select", newArray(0,1));
+						roiManager("AND");
+						if(selectionType() == 9 ){
+							roiManager("Add");
+							roiManager("Select", newArray(0,1));
+							roiManager("Delete");
+							roiManager("Select", 0);
+							roiManager("Split");
+							ROI = newArray();
+							for(n=1;n<roiManager("Count");n++){
+								ROI = Array.concat(ROI,n);
+							}
+							roiManager("Select", ROI);
+							roiManager("Measure");
+							roiManager("Select", 0);
+							roiManager("Delete");
+							for(t=0;t<nResults;t++){
+								area = area+getResult("Area",t);
+							}
+							area = area/nResults;
+							finalCount = nResults;
+						
+							print(title+"	"+finalCount+"	"+area+"	"+precount+"	"+postcount+"	"+POIcount);
+							selectImage(title+"_"+pre+"_mask.tif");
+							close();
+						}
+						else{
+							print(title+"	"+finalCount+"	"+area+"	"+precount+"	"+postcount+"	"+POIcount);
+							roiManager("reset");
+							run("Clear Results");
+							selectImage(title+"_"+pre+"_mask.tif");
+							close();
+						}
+					}
+					else{
+						print(title+"	"+finalCount+"	"+area+"	"+precount+"	"+postcount+"	"+POIcount);
+						roiManager("reset");
+						run("Clear Results");
+						selectImage(title+"_"+pre+"_mask.tif");
+						close();
+					}
+				}
+				else{
+					print(title+"	"+finalCount+"	"+area+"	"+precount+"	"+postcount+"	"+POIcount);
+					roiManager("reset");
+					run("Clear Results");
+					selectImage(title+"_"+pre+"_mask.tif");
+					close();
+				}
+			}
+			else{
+				print(title+"	"+finalCount+"	"+area+"	"+precount+"	"+postcount+"	"+POIcount);
+				roiManager("reset");
+				run("Clear Results");
+				selectImage(title+"_"+pre+"_mask.tif");
+				close();
+			}
+		}
+		else{
+			roiManager("reset");
+			run("Clear Results");
+		}
+	}
+}
